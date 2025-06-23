@@ -1,19 +1,19 @@
 pipeline {
     agent any
+    tools {
+		nodejs "Node JS"
+	}
+
+	environment {
+		RENDER_BASE_URL = "https://gallery-45sh.onrender.com/"
+	}
     stages {
         stage('Install') {
             steps {
                 sh 'npm install'
             }
         }
-        stage('Deploy') {
-            steps {
-                sh 'node server.js'
-            }
-        }
-    }
-}
-stage('Test') {
+        stage('Test') {
     steps {
         script {
             try {
@@ -26,12 +26,25 @@ stage('Test') {
             }
         }
     }
-}
-post {
-    success {
-        slackSend (
-            channel: '#Sally_IP1',
-            message: "✅ Build #${env.BUILD_ID} is live: https://your-app.onrender.com"
-        )
     }
+        stage('Deploy') {
+            steps {
+                sh 'node server.js'
+            }
+        }
+    } post {
+        always{
+            script{
+                if{ currentBuild.result == 'SUCCESS' } {
+                    slackSend (
+                        message: "✅ SUCCESS: Build #${env.BUILD_NUMBER} is deployed at ${env.RENDER_DEPLOY_URL}"
+                    )
+                } else {
+                    slackSend (
+                        message: "❌ FAILURE: Build #${env.BUILD_NUMBER}")
+                        }
+            }
+            }
+
+}
 }
