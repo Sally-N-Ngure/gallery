@@ -27,3 +27,11 @@ stage('Test') {
         }
     }
 }
+post {
+    success {
+        slackSend (
+            channel: '#Sally_IP1',
+            message: "✅ Build #${env.BUILD_ID} is live: https://your-app.onrender.com"
+        )
+    }
+}
