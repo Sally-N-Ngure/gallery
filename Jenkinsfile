@@ -5,7 +5,7 @@ pipeline {
 	}
 
 	environment {
-		RENDER_BASE_URL = "https://gallery-45sh.onrender.com/"
+		RENDER_BASE_URL = "https://gallery-1-d5xf.onrender.com"
 	}
     stages {
         stage('Install') {
@@ -26,7 +26,7 @@ pipeline {
             script{
                 if (currentBuild.result == 'SUCCESS' ) {
                     slackSend (
-                        message: "✅ SUCCESS: Build #${env.BUILD_NUMBER} is deployed at ${env.RENDER_DEPLOY_URL}"
+                        message: "✅ SUCCESS: Build #${env.BUILD_NUMBER} is deployed at ${env.RENDER_BASE_URL}"
                     )
                 } else {
                     slackSend (
