@@ -14,28 +14,17 @@ pipeline {
             }
         }
         stage('Test') {
-    steps {
-        script {
-            try {
-                sh 'npm test'
-            } catch (err) {
-                mail to: 'nguresallynjoki@gmail.com',
-                     subject: "Build Failed: #${env.BUILD_ID}",
-                     body: "Tests failed on Jenkins!"
-                error("Tests failed")
-            }
-        }
-    }
-    }
-        stage('Deploy') {
             steps {
-                sh 'node server.js'
+                sh "npm test" 
             }
-        }
-    } post {
+    }
+        
+        
+    } 
+    post {
         always{
             script{
-                if{ currentBuild.result == 'SUCCESS' } {
+                if (currentBuild.result == 'SUCCESS' ) {
                     slackSend (
                         message: "✅ SUCCESS: Build #${env.BUILD_NUMBER} is deployed at ${env.RENDER_DEPLOY_URL}"
                     )
