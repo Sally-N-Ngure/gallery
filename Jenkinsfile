@@ -6,6 +6,7 @@ pipeline {
 
 	environment {
 		RENDER_BASE_URL = "https://gallery-1-d5xf.onrender.com"
+        RENDER_SERVICE_ID = "srv-d1csbmvfte5s738vijt0"
 	}
     stages {
         stage('Install') {
@@ -15,10 +16,20 @@ pipeline {
         }
         stage('Test') {
             steps {
-                sh "npm test" 
+             sh "npm test" 
             }
-    }
-        
+        }
+        stage("Deploy to Render") {
+			steps {
+				withCredentials([string(credentialsId: "SallyIP1", variable: 'RENDER_API_KEY')]) {
+					sh """
+	          curl -X POST https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys \
+	          -H "Accept: application/json" \
+	          -H "Content-Type: application/json" \
+	          -H "Authorization: Bearer ${RENDER_API_KEY}"
+          """
+			}
+		}
         
     } 
     post {
