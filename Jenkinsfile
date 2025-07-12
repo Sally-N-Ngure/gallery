@@ -1,55 +1,85 @@
 pipeline {
-    agent any
+  agent any
 
-    tools {
-		nodejs "Node JS"
-	}
+  tools {
+    nodejs "Node JS"
+  }
 
-	environment {
-		RENDER_BASE_URL = "https://gallery-1-d5xf.onrender.com"
-        RENDER_SERVICE_ID = "srv-d1csbmvfte5s738vijt0"
-	}
+  environment {
+    MONGODB_URI = credentials("mongo db secrect")
+    RENDER_BASE_URL = "https://gallery-1-d5xf.onrender.com/"
+  }
 
-    stages {
-        stage('Install') {
-            steps {
-                sh 'npm install'
-            }
-        }
-
-        stage('Test') {
-            steps {
-             sh "npm test" 
-            }
-        }
-
-        stage("Deploy to Render") {
-			steps {
-				withCredentials([string(credentialsId: "SallyIP1", variable: 'RENDER_API_KEY')]) {
-					sh """
-						curl -X POST https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys \
-						-H "Accept: application/json" \
-						-H "Content-Type: application/json" \
-						-H "Authorization: Bearer ${RENDER_API_KEY}"
-					"""
-				}
-			}
-		}
+  stages {
+    stage("Clone Repository") {
+      steps {
+        git branch: "master", url: "https://github.com/Sally-N-Ngure/gallery"
+      }
     }
 
-    post {
-        always {
-            script {
-                if (currentBuild.result == 'SUCCESS' ) {
-                    slackSend (
-                        message: "✅ SUCCESS: Build #${env.BUILD_NUMBER} is deployed at ${env.RENDER_BASE_URL}"
-                    )
-                } else {
-                    slackSend (
-                        message: "❌ FAILURE: Build #${env.BUILD_NUMBER}")
-                }
-            }
-        }
+    stage("Install Dependecies") {
+      steps {
+        sh "npm install"
+      }
+    }
 
-	}
+    stage("Run Tests") {
+      steps {
+        sh "npm test"
+      }
+
+      post {
+        failure {
+          emailext(
+            subject: "Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+						body: "The build for ${env.JOB_NAME} #${env.BUILD_NUMBER} has failed. Please check the Jenkins console output for more details.",
+						to: "sally.ngure@student.moringaschool.com"
+          )
+        }
+      }
+    }
+
+    stage("Deploy to Render") {
+      steps {
+        echo "Deploying to Render"
+				echo "base URL: ${RENDER_BASE_URL}"
+				echo "Deployment complete."
+      }
+
+      post {
+        success{
+          slackSend(
+						channel: "#sally_ip1",
+						color: "good",
+						message: "Build and deployment successful: ${env.JOB_NAME} #${env.BUILD_NUMBER}. Check the build at ${RENDER_BASE_URL}",
+						teamDomain: "sallyip1",
+						tokenCredentialId: "Jslack_id",
+						botUser: true
+					)
+        }
+        failure{
+          slackSend(
+						channel: "#sally_ip1",
+						color: "danger",
+						message: "Build failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}. Please check the Jenkins console output for more details.",
+						teamDomain: "sallyip1",
+						tokenCredentialId: "slack_id",
+						botUser: true
+					)
+        }
+      }
+    }
+  }
+
+  post {
+    always {
+      script {
+        if (currentBuild.result == 'SUCCESS') {
+					echo "Build successful"
+				} else {
+					echo "Build failed, check the logs for details"
+				}
+      }
+    }
+  }
 }
